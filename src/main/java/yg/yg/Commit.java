@@ -1,11 +1,6 @@
-package yg.yg;//package com.example.yg;
+package yg.yg;
 
-//import net.mamoe.mirai.event.events.GroupMessageEvent;
 
-import org.springframework.util.Base64Utils;
-
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 
 public class Commit {
 
@@ -77,34 +72,36 @@ public class Commit {
         boolean a = content.startsWith("添加本周比赛");
         boolean b = content.startsWith("添加比赛");
         //以“添加本周比赛开头”或者以“添加比赛”开头，切长度大于15
-        if ((a || b) && content.length() > 15) {
-            char[] chars = content.toCharArray();
-            int day;
-            StringBuilder builder = new StringBuilder();
-            for (int i = a ? 6 : 4; i < chars.length; i++) {
-                //遍历到周字
-                if (chars[i] != '周') {
+        if ((a || b) && content.length() < 15) {
+            return null;
+        }
+        char[] chars = content.toCharArray();
+        int day;
+        StringBuilder builder = new StringBuilder();
+        for (int i = a ? 6 : 4; i < chars.length; i++) {
+            //遍历到周字
+            if (chars[i] != '周') {
+                continue;
+            }
+            //获取周的下一个字, 尝试解析为日期
+            day = WeekCaseUtil.weekCaseInt(chars[++i]);
+            if (day == 0) {
+                //解析失败, 输入错误
+                return null;
+            }
+            for (i = i + 1; i < chars.length; i++) {
+                char c = chars[i];
+                //日期解析成功后, 跳过下一个字之间的所有空格
+                if (c == ' ' || c == 13 || c == 10) {
                     continue;
                 }
-                //获取周的下一个字, 尝试解析为日期
-                day = WeekCaseUtil.weekCaseInt(chars[++i]);
-                if (day == 0) {
-                    //解析失败, 输入错误
-                    return null;
+                //拼接剩余字符
+                for (; i < chars.length; i++) {
+                    builder.append(chars[i]);
                 }
-                for (i = i + 1; i < chars.length; i++) {
-                    char c = chars[i];
-                    //日期解析成功后, 跳过下一个字之间的所有空格
-                    if (c != ' ' && c != 13 && c != 10) {
-                        //拼接剩余字符
-                        for (; i < chars.length; i++) {
-                            builder.append(chars[i]);
-                        }
-                        //保存
-                        yg.addThisWeek(builder.toString(), day);
-                        return "添加成功";
-                    }
-                }
+                //保存
+                yg.addThisWeek(builder.toString(), day);
+                return "添加成功";
             }
         }
         return null;
